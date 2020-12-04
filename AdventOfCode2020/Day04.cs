@@ -20,10 +20,10 @@ namespace AdventOfCode2020
             public string Pid { get; set; }
             public string Cid { get; set; }
 
-            public bool IsAlmostValid => Validate1();
-            public bool IsCompletelyValid => Validate2();
+            public bool IsValid => Validate();
+            public bool IsFullyValid => FullyValidated();
             
-            private bool Validate1()
+            private bool Validate()
             {
                 var valid = true;
                 valid &= !string.IsNullOrWhiteSpace(Byr);
@@ -37,114 +37,23 @@ namespace AdventOfCode2020
             }
             
             
-            private bool Validate2()
+            private bool FullyValidated()
             {
                 var valid = true;
-                valid &= IsByrValid();
-                valid &= IsIyrValid();
-                valid &= IsEyrValid();
-                valid &= IsHgtValid();
-                valid &= IsHclValid();
-                valid &= IsEclValid();
-                valid &= IsPidValid();
+                valid &= IsFieldValid(Byr, @"\b(19[2-8][0-9]|199[0-9]|200[0-2])\b");
+                valid &= IsFieldValid(Iyr, @"\b(201[0-9]|2020)\b");
+                valid &= IsFieldValid(Eyr, @"\b(202[0-9]|2030)\b");
+                valid &= IsFieldValid(Hgt, @"\b((1[5-8][0-9]|19[0-3])cm|(59|6[0-9]|7[0-6])in)\b");
+                valid &= IsFieldValid(Hcl, @"#\b[0-9a-z]{6}\b");
+                valid &= IsFieldValid(Ecl, @"\b(amb|blu|brn|gry|grn|hzl|oth)\b");
+                valid &= IsFieldValid(Pid, @"\b[0-9]{9}\b");
                 return valid;
             }
 
-            private bool IsByrValid()
+            private bool IsFieldValid(string field, string regex)
             {
-                if (string.IsNullOrWhiteSpace(Byr))
-                {
-                    return false;
-                }
-                
-                var valid = true;
-                valid &= Byr.Length == 4;
-                valid &= int.Parse(Byr) >= 1920;
-                valid &= int.Parse(Byr) <= 2002;
-                return valid;
-            }
+                return !string.IsNullOrWhiteSpace(field) && Regex.Match(field, regex).Success;
 
-            private bool IsIyrValid()
-            {
-                if (string.IsNullOrWhiteSpace(Iyr))
-                {
-                    return false;
-                }
-                
-                var valid = true;
-                valid &= Iyr.Length == 4;
-                valid &= int.Parse(Iyr) >= 2010;
-                valid &= int.Parse(Iyr) <= 2020;
-                return valid;
-            }
-            
-            private bool IsEyrValid()
-            {
-                if (string.IsNullOrWhiteSpace(Eyr))
-                {
-                    return false;
-                }
-                
-                var valid = true;
-                valid &= Eyr.Length == 4;
-                valid &= int.Parse(Eyr) >= 2020;
-                valid &= int.Parse(Eyr) <= 2030;
-                return valid;
-            }
-           
-            private bool IsHgtValid()
-            {
-                if (string.IsNullOrWhiteSpace(Hgt))
-                {
-                    return false;
-                }
-
-                if (Hgt.Contains("cm"))
-                {
-                    var cm = int.Parse(Hgt.Remove(Hgt.IndexOf("cm", StringComparison.Ordinal)));
-                    return cm >= 150 && cm <= 193;
-                }
-
-                if (Hgt.Contains("in"))
-                {
-                    var inc = int.Parse(Hgt.Remove(Hgt.IndexOf("in", StringComparison.Ordinal)));
-                    return inc >= 59 && inc <= 76;
-                }
-
-                return false;
-            }
-            
-            private bool IsHclValid()
-            {
-                if (string.IsNullOrWhiteSpace(Hcl))
-                {
-                    return false;
-                }
-
-                var regex = @"#\b[0-9a-z]{6}\b";
-                return Regex.Match(Hcl, regex).Success;
-            }
-
-            private bool IsEclValid()
-            {
-                if (string.IsNullOrWhiteSpace(Ecl))
-                {
-                    return false;
-                }
-
-                var regex = @"\b(amb|blu|brn|gry|grn|hzl|oth)\b";
-                return Regex.Match(Ecl, regex).Success;
-            }
-
-            private bool IsPidValid()
-            {
-                if (string.IsNullOrWhiteSpace(Pid))
-                {
-                    return false;
-                }
-
-                var regex = @"\b[0-9]{9}\b";
-                return Regex.Match(Pid, regex).Success;
             }
         }
 
@@ -204,12 +113,12 @@ namespace AdventOfCode2020
         
         public override string Solve_1()
         {
-            return passports.Count(p => p.IsAlmostValid).ToString();
+            return passports.Count(p => p.IsValid).ToString();
         }
 
         public override string Solve_2()
         {
-            return passports.Count(p => p.IsCompletelyValid).ToString();
+            return passports.Count(p => p.IsFullyValid).ToString();
         }
     }
 }
