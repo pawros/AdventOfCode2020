@@ -44,7 +44,6 @@ namespace AdventOfCode2020
         
         public override string Solve_2()
         {
-            var lastInstruction = instructions.Last();
             var globalResult = 0;
             
             foreach (var instruction in instructions)
