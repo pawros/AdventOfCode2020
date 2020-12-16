@@ -8,82 +8,50 @@ namespace AdventOfCode2020
 {
     public sealed class Day15 : BaseDay
     {
-        private readonly string input;
+        private readonly int[] sequence;
 
         public Day15()
         {
-            input = File.ReadAllText(InputFilePath);
+            var input = File.ReadAllText(InputFilePath);
+            sequence = input.Split(',').Select(x => int.Parse(x)).ToArray();
         }
         
         public override string Solve_1()
         {
-            var numbers = input.Split(',').Select(x => int.Parse(x)).ToList();
-            var turn = numbers.Count;
-            while (turn < 2020)
-            {
-                var lastSpoken = numbers.Last();
-                if (numbers.Count(x => x == lastSpoken) < 2)
-                {
-                    numbers.Add(0);
-                }
-                else
-                {
-                    var indices = GetTwoLastIndices(lastSpoken).ToArray();
-                    numbers.Add(indices[0] - indices[1]);
-                }
-
-                turn++;
-            }
-            
-            return numbers.Last().ToString();
-            
-            IEnumerable<int> GetTwoLastIndices(int lastSpoken)
-            {
-                var count = 0;
-                for (var i = numbers.Count - 1; i >= 0; i--)
-                {
-                    if (numbers[i] == lastSpoken)
-                    {
-                        count++;
-                        yield return i + 1;
-                    }
-
-                    if (count == 2)
-                    {
-                        yield break;
-                    }
-                }
-            }
+            return GetNthSpoken(sequence, 2020).ToString();
         }
 
         public override string Solve_2()
         {
-            var numbers = input.Split(',')
-                .Select(x => int.Parse(x))
-                .Select((x, i) => new { X = x, I = i})
-                .ToDictionary(x => x.X, x => (lastTurn: x.I, prevLastTurn: -1));
-            
-            var lastSpoken = numbers.Last().Key;
-            
-            var turn = numbers.Count;
-            while (turn < 30000000)
+            return GetNthSpoken(sequence, 30_000_000).ToString();
+        }
+
+        private static int GetNthSpoken(IReadOnlyList<int> sequence, int nth)
+        {
+            var numbers = new int[nth];
+            for (var i = 0; i < sequence.Count; i++)
             {
-                if (numbers[lastSpoken].prevLastTurn == -1)
+                numbers[sequence[i]] = i + 1;
+            }
+
+            var lastSpoken = sequence[^1];
+            for (var turn = sequence.Count; turn < nth; turn++)
+            {
+                if (numbers[lastSpoken] > 0)
                 {
-                    lastSpoken = 0;
-                    numbers[lastSpoken] = (turn, numbers[lastSpoken].lastTurn);
+                    var newSpoken = turn - numbers[lastSpoken];
+                    numbers[lastSpoken] = turn;
+                    lastSpoken = newSpoken;
+
                 }
                 else
                 {
-                    lastSpoken = numbers[lastSpoken].lastTurn - numbers[lastSpoken].prevLastTurn;
-                    var prev = numbers.ContainsKey(lastSpoken) ? numbers[lastSpoken].lastTurn : -1;
-                    numbers[lastSpoken] = (turn, prev);
+                    numbers[lastSpoken] = turn;
+                    lastSpoken = 0;
                 }
-                
-                turn++;
             }
 
-            return lastSpoken.ToString();
+            return lastSpoken;
         }
     }
 }
