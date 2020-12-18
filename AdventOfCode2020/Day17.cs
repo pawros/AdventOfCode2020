@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
+using System.Linq;
 using AoCHelper;
 
 namespace AdventOfCode2020
 {
     public sealed class Day17 : BaseDay
     {
-        private readonly Dictionary<(int x, int y, int z), bool> cubes3d;
-        private readonly Dictionary<(int x, int y, int z, int w), bool> cubes4d;
-        private const int N = 12;
+        private Dictionary<(int x, int y, int z), bool> cubes3d;
+        private Dictionary<(int x, int y, int z, int w), bool> cubes4d;
+        
         public Day17()
         {
             var input = File.ReadAllLines(InputFilePath);
@@ -37,147 +37,111 @@ namespace AdventOfCode2020
                     }
                 }
             }
-            
         }
 
         public override string Solve_1()
         {
             for (var i = 0; i < 6; i++)
             {
-                var cubesToAdd = new List<(int, int, int)>();
-                var cubesToRemove = new List<(int, int, int)>();
-                
-                for (var z = -N; z <= N; z++)
+                var cubesToCheck = new List<(int x, int y, int z)>();
+                foreach (var cube in cubes3d.Keys)
                 {
-                    for (var x = -N; x <= N; x++)
+                    cubesToCheck.AddRange(Deltas().Select(d => (cube.x + d.x, cube.y + d.y, cube.z + d.z)));
+                }
+
+                var newCubes3d = new Dictionary<(int x, int y, int z), bool>();
+                foreach (var cube in cubesToCheck)
+                {
+                    var neighbors = Deltas().Count(d => cubes3d.ContainsKey((cube.x + d.x, cube.y + d.y, cube.z + d.z)));
+
+                    if (cubes3d.ContainsKey(cube) && (neighbors == 2 || neighbors == 3))
                     {
-                        for (var y = -N; y <= N; y++)
-                        {
-                            var c = (x, y, z);
-                            var neighbors = 0;
-                            
-                            for (var dz = -1; dz <= 1; dz++)
-                            {
-                                for (var dx = -1; dx <= 1; dx++)
-                                {
-                                    for (var dy = -1; dy <= 1; dy++)
-                                    {
-                                        if (dx == 0 && dy == 0 && dz == 0)
-                                        {
-                                            continue;
-                                        }
-
-                                        var dc = (x + dx, y + dy, z + dz);
-                                        if (cubes3d.ContainsKey(dc))
-                                        {
-                                            neighbors++;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (cubes3d.ContainsKey(c))
-                            {
-                                if (neighbors != 2 && neighbors != 3)
-                                {
-                                    cubesToRemove.Add(c);
-                                }
-                            }
-                            else
-                            {
-                                if (neighbors == 3)
-                                {
-                                    cubesToAdd.Add(c);
-                                }
-                            }
-                        }
+                        newCubes3d[cube] = true;
+                    }
+                    else if (!cubes3d.ContainsKey(cube) && neighbors == 3)
+                    {
+                        newCubes3d[cube] = true;
                     }
                 }
 
-                foreach (var c in cubesToAdd)
-                {
-                    cubes3d.Add(c, true);
-                }
+                cubes3d = newCubes3d;
+            }
+            
+            return cubes3d.Count.ToString();
 
-                foreach (var c in cubesToRemove)
+            static IEnumerable<(int x, int y, int z)> Deltas()
+            {
+                var deltas = new []{-1, 0, 1};
+                foreach (var x in deltas)
                 {
-                    cubes3d.Remove(c);
+                    foreach (var y in deltas)
+                    {
+                        foreach (var z in deltas)
+                        {
+                            if (x == 0 && y == 0 && z == 0)
+                            {
+                                continue;
+                            }
+
+                            yield return (x, y, z);
+                        }
+                    }
                 }
             }
-            return cubes3d.Count.ToString();
         }
 
         public override string Solve_2()
         {
             for (var i = 0; i < 6; i++)
             {
-                var cubesToAdd = new List<(int, int, int, int)>();
-                var cubesToRemove = new List<(int, int, int, int)>();
-                
-                for (var z = -N; z <= N; z++)
+                var cubesToCheck = new List<(int x, int y, int z, int w)>();
+                foreach (var cube in cubes4d.Keys)
                 {
-                    for (var x = -N; x <= N; x++)
+                    cubesToCheck.AddRange(Deltas().Select(d => (cube.x + d.x, cube.y + d.y, cube.z + d.z, cube.w + d.w)));
+                }
+
+                var newCubes4d = new Dictionary<(int x, int y, int z, int w), bool>();
+                foreach (var cube in cubesToCheck)
+                {
+                    var neighbors = Deltas().Count(d => cubes4d.ContainsKey((cube.x + d.x, cube.y + d.y, cube.z + d.z, cube.w + d.w)));
+
+                    if (cubes4d.ContainsKey(cube) && (neighbors == 2 || neighbors == 3))
                     {
-                        for (var y = -N; y <= N; y++)
+                        newCubes4d[cube] = true;
+                    }
+                    else if (!cubes4d.ContainsKey(cube) && neighbors == 3)
+                    {
+                        newCubes4d[cube] = true;
+                    }
+                }
+
+                cubes4d = newCubes4d;
+            }
+            
+            return cubes4d.Count.ToString();
+
+            static IEnumerable<(int x, int y, int z, int w)> Deltas()
+            {
+                var deltas = new []{-1, 0, 1};
+                foreach (var x in deltas)
+                {
+                    foreach (var y in deltas)
+                    {
+                        foreach (var z in deltas)
                         {
-                            for (var w = -N; w <= N; w++)
+                            foreach (var w in deltas)
                             {
-                                var c = (x, y, z, w);
-                                var neighbors = 0;
+                                if (x == 0 && y == 0 && z == 0 && w == 0)
+                                {
+                                    continue;
+                                }
                                 
-                                for (var dz = -1; dz <= 1; dz++)
-                                {
-                                    for (var dx = -1; dx <= 1; dx++)
-                                    {
-                                        for (var dy = -1; dy <= 1; dy++)
-                                        {
-                                            for (var dw = -1; dw <= 1; dw++)
-                                            {
-                                                if (dx == 0 && dy == 0 && dz == 0 && dw == 0)
-                                                {
-                                                    continue;
-                                                }
-
-                                                var dc = (x + dx, y + dy, z + dz, w + dw);
-                                                if (cubes4d.ContainsKey(dc))
-                                                {
-                                                    neighbors++;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (cubes4d.ContainsKey(c))
-                                {
-                                    if (neighbors != 2 && neighbors != 3)
-                                    {
-                                        cubesToRemove.Add(c);
-                                    }
-                                }
-                                else
-                                {
-                                    if (neighbors == 3)
-                                    {
-                                        cubesToAdd.Add(c);
-                                    }
-                                }
+                                yield return (x, y, z, w);
                             }
                         }
                     }
                 }
-
-                foreach (var c in cubesToAdd)
-                {
-                    cubes4d.Add(c, true);
-                }
-
-                foreach (var c in cubesToRemove)
-                {
-                    cubes4d.Remove(c);
-                }
             }
-            return cubes4d.Count.ToString();
         }
     }
 }
