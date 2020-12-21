@@ -13,7 +13,7 @@ namespace AdventOfCode2020
         {
             public int Id { get; set; }
             public char[,] T { get; set; } = new char[N, N];
-            public Dictionary<Edge, int> Matches = new Dictionary<Edge, int>();
+            public Dictionary<(Edge, Flip), int> Matches = new Dictionary<(Edge, Flip), int>();
         }
         
         private const int N = 10;
@@ -45,9 +45,9 @@ namespace AdventOfCode2020
         {
             var edges = new Edge[] {Edge.Top, Edge.Right, Edge.Bottom, Edge.Left};
             
-            for (var i = 0; i < tiles.Count - 2; i++)
+            for (var i = 0; i < tiles.Count - 1; i++)
             {
-                for (var j = i + 1; j < tiles.Count - 1; j++)
+                for (var j = i + 1; j < tiles.Count; j++)
                 {
                     var tile1 = tiles[i];
                     var tile2 = tiles[j];
@@ -58,15 +58,23 @@ namespace AdventOfCode2020
                         {
                             if (GetEdge(tile1.T, edge1).SequenceEqual(GetRotatedEdge(tile2.T, edge2)))
                             {
-                                tile1.Matches[edge1] = tile2.Id;
-                                tile2.Matches[edge2] = tile1.Id;
+                                tile1.Matches[(edge1, Flip.None)] = tile2.Id;
+                                tile2.Matches[(edge2, Flip.None)] = tile1.Id;
+                            }
+                            else if (GetEdge(tile1.T, edge1).SequenceEqual(GetRotatedFlippedEdge(tile2.T, edge2)))
+                            {
+                                tile1.Matches[(edge1, Flip.None)] = tile2.Id;
+                                tile2.Matches[(edge2, Flip.Flip)] = tile1.Id;
                             }
                         }
                     }
                 }
             }
-            
-            throw new System.NotImplementedException();
+
+            var cornerTiles = tiles.Where(t => t.Matches.Count == 2).Select(t => t.Id).ToArray();
+            long result = cornerTiles.Aggregate<int, long>(1, (current, cornerTile) => current * cornerTile);
+
+            return result.ToString();
         }
 
         private enum Edge
@@ -76,51 +84,42 @@ namespace AdventOfCode2020
             Bottom,
             Left
         }
+
+        private enum Flip
+        {
+            None,
+            Flip
+        }
+        
+        public override string Solve_2()
+        {
+            throw new System.NotImplementedException();
+        }
         
         private char[] GetEdge(char[,] tile, Edge edge)
         {
             var e = new char[N];
-            
-            switch (edge)
-            {
-                case Edge.Top:
+
+            if (edge == Edge.Top)
+                for (var y = 0; y < N; y++)
                 {
-                    for (var y = 0; y < N; y++)
-                    {
-                        e[y] = tile[0, y];
-                    }
-
-                    break;
+                    e[y] = tile[0, y];
                 }
-
-                case Edge.Right:
+            else if (edge == Edge.Right)
+                for (var x = 0; x < N; x++)
                 {
-                    for (var x = 0; x < N; x++)
-                    {
-                        e[x] = tile[x, N - 1];
-                    }
-
-                    break;
+                    e[x] = tile[x, N - 1];
                 }
-                
-                case Edge.Bottom:
+            else if (edge == Edge.Bottom)
+                for (var y = N - 1; y >= 0; y--)
                 {
-                    for (var y = N - 1; y >= 0; y--)
-                    {
-                        e[N - y - 1] = tile[N - 1, y];
-                    }
-
-                    break;
+                    e[N - y - 1] = tile[N - 1, y];
                 }
-                
-                case Edge.Left:
-                    for (var x = N - 1; x >= 0; x--)
-                    {
-                        e[N - x - 1] = tile[x, 0];
-                    }
-                
-                    break;
-            }
+            else if (edge == Edge.Left)
+                for (var x = N - 1; x >= 0; x--)
+                {
+                    e[N - x - 1] = tile[x, 0];
+                }
 
             return e;
         }
@@ -129,55 +128,56 @@ namespace AdventOfCode2020
         {
             var e = new char[N];
 
-            switch (edge)
-            {
-                case Edge.Top:
+            if (edge == Edge.Top)
+                for (var y = N - 1; y >= 0; y--)
                 {
-                    for (var y = N - 1; y >= 0; y--)
-                    {
-                        e[N - y - 1] = tile[0, y];
-                    }
-
-                    break;
+                    e[N - y - 1] = tile[0, y];
                 }
-                
-                case Edge.Right:
+            else if (edge == Edge.Right)
+                for (var x = N - 1; x >= 0; x--)
                 {
-                    for (var x = N - 1; x >= 0; x--)
-                    {
-                        e[N - x - 1] = tile[x, N - 1];
-                    }
-
-                    break;
+                    e[N - x - 1] = tile[x, N - 1];
                 }
-
-                case Edge.Bottom:
+            else if (edge == Edge.Bottom)
+                for (var y = 0; y < N; y++)
                 {
-                    for (var y = 0; y < N; y++)
-                    {
-                        e[y] = tile[N - 1, y];
-                    }
-
-                    break;
+                    e[y] = tile[N - 1, y];
                 }
-                
-                case Edge.Left:
+            else if (edge == Edge.Left)
+                for (var x = 0; x < N; x++)
                 {
-                    for (var x = 0; x < N; x++)
-                    {
-                        e[x] = tile[x, 0];
-                    }
-
-                    break;
+                    e[x] = tile[x, 0];
                 }
-            }
 
             return e;
         }
-        
-        public override string Solve_2()
+
+        private char[] GetRotatedFlippedEdge(char[,] tile, Edge edge)
         {
-            throw new System.NotImplementedException();
+            var e = new char[N];
+
+            if (edge == Edge.Top)
+                for (var y = 0; y < N; y++)
+                {
+                    e[y] = tile[0, y];
+                }
+            else if (edge == Edge.Right)
+                for (var x = N - 1 ; x >= 0; x--)
+                {
+                    e[N - x - 1] = tile[x, 0];
+                }
+            else if (edge == Edge.Bottom)
+                for (var y = N - 1; y >= 0; y--)
+                {
+                    e[N - y - 1] = tile[N - 1, y];
+                }
+            else if (edge == Edge.Left)
+                for (var x = 0; x < N; x++)
+                {
+                    e[x] = tile[x, N - 1];
+                }
+
+            return e;
         }
     }
 }
