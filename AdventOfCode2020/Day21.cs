@@ -9,8 +9,8 @@ namespace AdventOfCode2020
 {
     public sealed class Day21 : BaseDay
     {
-        private List<string> remainingIngredients = new List<string>();
-        private List<string> remainingAllergens = new List<string>();
+        private List<string> remainingIngredients;
+        private List<string> remainingAllergens;
 
         private Dictionary<string, string> IngredientsToAllergen = new Dictionary<string, string>();
 
@@ -21,7 +21,7 @@ namespace AdventOfCode2020
         }
 
         private List<Food> food = new List<Food>();
-        
+
         public Day21()
         {
             foreach (var line in File.ReadLines(InputFilePath))
@@ -36,90 +36,52 @@ namespace AdventOfCode2020
                 food.Add(f);
             }
 
-            foreach (var f in food)
-            {
-                foreach (var ingredient in f.Ingredients)
-                {
-                    if (!remainingIngredients.Contains(ingredient))
-                    {
-                        remainingIngredients.Add(ingredient);
-                    }
-                }
-
-                foreach (var allergen in f.Allergens)
-                {
-                    if (!remainingAllergens.Contains(allergen))
-                    {
-                        remainingAllergens.Add(allergen);
-                    }
-                }
-            }
-            
+            remainingAllergens = food.SelectMany(f => f.Allergens).Distinct().ToList();
+            remainingIngredients = food.SelectMany(f => f.Ingredients).Distinct().ToList();
         }
-        
+
         public override string Solve_1()
         {
-            while (remainingAllergens.Count > 0)
+            while (remainingAllergens.Any())
             {
-                foreach (var f0 in food)
+                foreach (var allergen in remainingAllergens.ToList())
                 {
-                    var starOver = false;
+                    var f0 = food.First(f => f.Allergens.Contains(allergen));
 
-                    if (f0.Ingredients.Intersect(remainingIngredients).Count() == 1 &&
-                        f0.Allergens.Intersect(remainingAllergens).Count() == 1)
+                    var commonIngredients = f0.Ingredients.ToList();
+                    
+                    var otherFood = food.Where(f => f.Allergens.Contains(allergen) && f != f0).ToList();
+                    foreach (var of in otherFood)
                     {
-                        var ingredient = f0.Ingredients.Intersect(remainingIngredients).ToList()[0];
-                        var allergen = f0.Allergens.Intersect(remainingAllergens).ToList()[0];
-
-                        IngredientsToAllergen[ingredient] = allergen;
-                        remainingIngredients.Remove(ingredient);
-                        remainingAllergens.Remove(allergen);
-                        break;
+                        commonIngredients = commonIngredients.Intersect(of.Ingredients).ToList();
                     }
                     
-                    foreach (var ingredient in f0.Ingredients.Intersect(remainingIngredients))
+                    if (commonIngredients.Count == 1)
                     {
-                        var otherAllergens = food.Where(x => x.Ingredients.Intersect(remainingIngredients).Contains(ingredient) && x != f0)
-                            .SelectMany(x => x.Allergens.Intersect(remainingAllergens)).ToList();
-
-                        var its = f0.Allergens.Intersect(remainingAllergens).Intersect(otherAllergens).ToList();
-
-                        if (its.Count == 1)
+                        var ingredient = commonIngredients[0];
+                        IngredientsToAllergen[ingredient] = allergen;
+                        remainingAllergens.Remove(allergen);
+                        remainingIngredients.Remove(ingredient);
+                        
+                        foreach (var f in food)
                         {
-                            var allergen = its[0];
-                            IngredientsToAllergen[ingredient] = allergen;
-                            remainingIngredients.Remove(ingredient);
-                            remainingAllergens.Remove(allergen);
-                            starOver = true;
-                            break;
+                            f.Allergens.Remove(allergen);
+                            f.Ingredients.Remove(ingredient);
                         }
                     }
 
-                    if (starOver)
-                    {
-                        break;
-                    }
                 }
             }
 
-            var sum = 0;
-            foreach (var ingredient in remainingIngredients)
-            {
-                foreach (var f in food)
-                {
-                    if (f.Ingredients.Contains(ingredient))
-                    {
-                        sum++;
-                    }
-                }
-            }
-
-            return sum.ToString();
+            return food.Sum(f => f.Ingredients.Count).ToString();
         }
+
 
         public override string Solve_2()
         {
-            throw new System.NotImplementedException();
+            var orderedIngredients = IngredientsToAllergen.OrderBy(x => x.Value)
+                .ToDictionary(x => x.Key, x => x.Value);
+            return string.Join(',', orderedIngredients.Keys);
         }
     }
 }
