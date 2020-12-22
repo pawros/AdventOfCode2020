@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using AoCHelper;
 
@@ -9,6 +10,18 @@ namespace AdventOfCode2020
 {
     public sealed class Day20 : BaseDay
     {
+        private enum Edge
+        {
+            Top,
+            Right,
+            Bottom,
+            Left,
+            FlippedTop,
+            FlippedRight,
+            FlippedBottom,
+            FlippedLeft
+        }
+        
         private class Tile
         {
             public int Id { get; set; }
@@ -98,19 +111,7 @@ namespace AdventOfCode2020
 
             return result.ToString();
         }
-
-        private enum Edge
-        {
-            Top,
-            Right,
-            Bottom,
-            Left,
-            FlippedTop,
-            FlippedRight,
-            FlippedBottom,
-            FlippedLeft
-        }
-
+        
         public override string Solve_2()
         {
             var seed0 = tiles.First(t => t.Matches.Count == 2);
@@ -186,10 +187,14 @@ namespace AdventOfCode2020
             }
 
             var image = MergeTiles();
+
+            FindMonsters(image, out var newImg, out var monsterPositions);
             
-            PrintTile(image);
+            DrawMonsters(newImg, monsterPositions);
+
+            PrintTile(newImg);
             
-            return string.Empty;
+            return GetRoughness(newImg).ToString();
         }
 
         private bool TryGetAdjacent(char[] edge, Dictionary<int, Tile> tilesToPlace, Edge adjacentOn, out Tile resultTile)
@@ -251,15 +256,166 @@ namespace AdventOfCode2020
 
             return image;
         }
+
+        private void FindMonsters(char[,] image, out char[,] newImg, out List<(int, int)> monsterPositions)
+        {
+            var monsterParts = 15;
+            var monster = CreateMonster();
+            
+            var img = image;
+            var patX = monster.GetLength(0);
+            var patY = monster.GetLength(1);
+            var accX = img.GetLength(0) - patX + 1;
+            var accY = img.GetLength(1) - patY + 1;
+
+            monsterPositions = new List<(int x, int y)>();
+            
+            var accumulator = new int[accX, accY];
+            for (var r = 0; r < 4; r++)
+            {
+                for (var ax = 0; ax < accX; ax++)
+                {
+                    for (var ay = 0; ay < accY; ay++)
+                    {
+                        var accValue = 0;
+                        for (var px = 0; px < patX; px++)
+                        {
+                            for (var py = 0; py < patY; py++)
+                            {
+                                if (monster[px, py] == img[ax + px, ay + py])
+                                {
+                                    accValue++;
+                                }
+                            }
+                        }
+
+                        accumulator[ax, ay] = accValue;
+                    }
+                }
+
+                for (var ax = 0; ax < accX; ax++)
+                {
+                    for (var ay = 0; ay < accY; ay++)
+                    {
+                        if (accumulator[ax, ay] == monsterParts)
+                        {
+                            monsterPositions.Add((ax, ay));
+                        }
+                    }
+                }
+
+                if (monsterPositions.Count > 0)
+                {
+                    newImg = img;
+                    return;
+                }
+                
+                monsterPositions.Clear();
+                img = Rotate(img);
+            }
+
+            img = image;
+            img = Flip(img);
+            
+            for (var r = 0; r < 4; r++)
+            {
+                for (var ax = 0; ax < accX; ax++)
+                {
+                    for (var ay = 0; ay < accY; ay++)
+                    {
+                        var accValue = 0;
+                        for (var px = 0; px < patX; px++)
+                        {
+                            for (var py = 0; py < patY; py++)
+                            {
+                                if (monster[px, py] == img[ax + px, ay + py])
+                                {
+                                    accValue++;
+                                }
+                            }
+                        }
+
+                        accumulator[ax, ay] = accValue;
+                    }
+                }
+
+                for (var ax = 0; ax < accX; ax++)
+                {
+                    for (var ay = 0; ay < accY; ay++)
+                    {
+                        if (accumulator[ax, ay] == monsterParts)
+                        {
+                            monsterPositions.Add((ax, ay));
+                        }
+                    }
+                }
+
+                if (monsterPositions.Count > 0)
+                {
+                    newImg = img;
+                    return;
+                }
+                
+                monsterPositions.Clear();
+                img = Rotate(img);
+            }
+
+            newImg = null;
+        }
+
+        private void DrawMonsters(char[,] img, List<(int x, int y)> monsterPositions)
+        {
+            var monster = CreateMonster();
+            var patX = monster.GetLength(0);
+            var patY = monster.GetLength(1);
+            
+            foreach (var mp in monsterPositions)
+            {
+                for (var px = 0; px < patX; px++)
+                {
+                    for (var py = 0; py < patY; py++)
+                    {
+                        if (monster[px, py] == '#')
+                        {
+                            img[mp.x + px, mp.y + py] = 'O';
+                        }
+                    }
+                }
+            }
+        }
+        
+        private char[,] CreateMonster()
+        {
+            var monster = new char[3, 20];
+            monster[0, 18] = '#';
+            monster[1, 0] = '#';
+            monster[1, 5] = '#';
+            monster[1, 6] = '#';
+            monster[1, 11] = '#';
+            monster[1, 12] = '#';
+            monster[1, 17] = '#';
+            monster[1, 18] = '#';
+            monster[1, 19] = '#';
+            monster[2, 1] = '#';
+            monster[2, 4] = '#';
+            monster[2, 7] = '#';
+            monster[2, 10] = '#';
+            monster[2, 13] = '#';
+            monster[2, 16] = '#';
+
+            return monster;
+        }
         
         private static char[,] Flip(char[,] tile)
         {
-            var r = new char[N, N];
-            for (var i = 0; i < N; i++)
+            var n = tile.GetLength(0);
+            
+            var r = new char[n, n];
+            for (var i = 0; i < n; i++)
             {
-                for (var j = 0; j < N; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    r[i, N - j - 1] = tile[i, j];
+                    r[i, n - j - 1] = tile[i, j];
                 }
             }
 
@@ -268,12 +424,14 @@ namespace AdventOfCode2020
         
         private static char[,] Rotate(char[,] tile)
         {
-            var r = new char[N, N];
-            for (var i = 0; i < N; i++)
+            var n = tile.GetLength(0);
+            
+            var r = new char[n, n];
+            for (var i = 0; i < n; i++)
             {
-                for (var j = 0; j < N; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    r[j, N - i - 1] = tile[i, j];
+                    r[j, n - i - 1] = tile[i, j];
                 }
             }
 
@@ -354,6 +512,23 @@ namespace AdventOfCode2020
                 }
 
             return e;
+        }
+
+        private static int GetRoughness(char[,] tile)
+        {
+            var r = 0;
+            for (var i = 0; i < tile.GetLength(0); i++)
+            {
+                for (var j = 0; j < tile.GetLength(1); j++)
+                {
+                    if (tile[i, j] == '#')
+                    {
+                        r++;
+                    }
+                }
+            }
+
+            return r;
         }
         
         private static void PrintTile(char[,] tile)
