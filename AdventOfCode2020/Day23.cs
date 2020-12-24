@@ -68,7 +68,7 @@ namespace AdventOfCode2020
         public override string Solve_2()
         {
             const int n = 1_000_000;
-            var cups = new Dictionary<int, int>();
+            var cups = new int[n + 1];
             for (var i = 0; i < inputCups.Count - 1; i++)
             {
                 cups[inputCups[i]] = inputCups[i + 1];
@@ -82,8 +82,8 @@ namespace AdventOfCode2020
             }
 
             cups[n] = inputCups.First();
-            
-            var currentLabel = cups.First().Key;
+
+            var currentLabel = inputCups.First();
             for (var turn = 1; turn <= 10_000_000; turn++)
             {
                 var pick1 = cups[currentLabel];
